@@ -6,13 +6,13 @@ import pandas as pd
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import OneHotEncoder,StandardScaler
+from sklearn.preprocessing import OneHotEncoder,StandardScaler,LabelEncoder
 
 from src.logger import logging
 from src.exception import CustomException
 from src.utils import save_object
 from .data_ingestion import DataIngestion
-
+from .model_trainer import ModelTrainer
 @dataclass
 class DataTransformationConfig:
     preprocessor_file_path = os.path.join('artifacts','preprocessor.pkl')
@@ -63,9 +63,6 @@ class DataTransformation:
             logging.info('Read train and test data completed')
             logging.info('Obtaining preprocessing object')
             
-            train_df.loc[:, 'Churn'] = train_df['Churn'].replace({'Yes': 1, 'No': 0})
-            test_df.loc[:, 'Churn'] = test_df['Churn'].replace({'Yes': 1, 'No': 0})
-            
             train_df.TotalCharges = pd.to_numeric(train_df.TotalCharges, errors='coerce')
             test_df.TotalCharges = pd.to_numeric(test_df.TotalCharges, errors='coerce')
 
@@ -75,6 +72,9 @@ class DataTransformation:
             
             input_features_test = test_df.drop(columns=['Churn','PhoneService', 'gender','MultipleLines','customerID'])
             target_test = test_df['Churn']
+            label_encoder = LabelEncoder()
+            target_train = label_encoder.fit_transform(target_train)
+            target_test = label_encoder.transform(target_test)
             logging.info(
                 'Applying preprocessing on training and testing dataframes'
             )
